@@ -1,0 +1,144 @@
+import pygame
+import random
+import sys
+
+# Initialize Pygame
+pygame.init()
+
+# Set up the screen
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Breakout")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+
+# Paddle properties
+paddle_width = 100
+paddle_height = 20
+paddle_x = (WIDTH - paddle_width) // 2
+paddle_y = HEIGHT - paddle_height - 20
+paddle_speed = 10
+
+# Ball properties
+ball_radius = 10
+ball_x = WIDTH // 2
+ball_y = HEIGHT // 2
+ball_speed_x = random.choice([-5, 5])
+ball_speed_y = -5
+
+# Brick properties
+brick_rows = 5
+brick_cols = 10
+brick_width = 70
+brick_height = 20
+brick_gap = 10
+bricks = []
+
+# Function to create bricks
+def create_bricks():
+    bricks.clear()
+    for row in range(brick_rows):
+        for col in range(brick_cols):
+            brick_x = col * (brick_width + brick_gap) + brick_gap
+            brick_y = row * (brick_height + brick_gap) + brick_gap + 50
+            bricks.append(pygame.Rect(brick_x, brick_y, brick_width, brick_height))
+
+# Function to draw the paddle
+def draw_paddle():
+    pygame.draw.rect(screen, RED, (paddle_x, paddle_y, paddle_width, paddle_height))
+
+# Function to draw the ball
+def draw_ball():
+    pygame.draw.circle(screen, BLUE, (ball_x, ball_y), ball_radius)
+
+# Function to draw the bricks
+def draw_bricks():
+    for brick in bricks:
+        pygame.draw.rect(screen, BLACK, brick)
+
+# Main game loop
+running = True
+while running:
+    # Event handling
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+    # Move the paddle
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_LEFT] and paddle_x > 0:
+        paddle_x -= paddle_speed
+    if keys[pygame.K_RIGHT] and paddle_x < WIDTH - paddle_width:
+        paddle_x += paddle_speed
+
+    # Move the ball
+    ball_x += ball_speed_x
+    ball_y += ball_speed_y
+
+    # Check collision with walls
+    if ball_x <= 0 or ball_x >= WIDTH:
+        ball_speed_x *= -1
+    if ball_y <= 0:
+        ball_speed_y *= -1
+
+    # Check collision with paddle
+    if ball_y >= paddle_y - ball_radius and paddle_x <= ball_x <= paddle_x + paddle_width:
+        ball_speed_y *= -1
+
+    # Check collision with bricks
+    for brick in bricks:
+        if brick.colliderect(pygame.Rect(ball_x - ball_radius, ball_y - ball_radius, ball_radius * 2, ball_radius * 2)):
+            bricks.remove(brick)
+            ball_speed_y *= -1
+
+    # Clear the screen
+    screen.fill(WHITE)
+
+    # Draw objects
+    draw_paddle()
+    draw_ball()
+    draw_bricks()
+
+    # Check if all bricks are destroyed
+    if not bricks:
+        font = pygame.font.Font(None, 36)
+        text = font.render("Congratulations! You won!", True, BLACK)
+        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        create_bricks()  # Reset bricks
+        ball_x = WIDTH // 2  # Reset ball position
+        ball_y = HEIGHT // 2
+        ball_speed_x = random.choice([-5, 5])  # Randomize ball direction
+        ball_speed_y = -5
+        pygame.event.clear()  # Clear any key presses
+        continue
+
+    # Check if the ball goes out of bounds
+    if ball_y >= HEIGHT:
+        font = pygame.font.Font(None, 36)
+        text = font.render("Game Over! Try Again!", True, BLACK)
+        screen.blit(text, (WIDTH // 2 - text.get_width() // 2, HEIGHT // 2 - text.get_height() // 2))
+        pygame.display.flip()
+        pygame.time.wait(3000)
+        create_bricks()  # Reset bricks
+        ball_x = WIDTH // 2  # Reset ball position
+        ball_y = HEIGHT // 2
+        ball_speed_x = random.choice([-5, 5])  # Randomize ball direction
+        ball_speed_y = -5
+        pygame.event.clear()  # Clear any key presses
+        continue
+
+    # Update display
+    pygame.display.flip()
+
+    # Cap the frame rate
+    pygame.time.Clock().tick(60)
+
+# Quit Pygame
+pygame.quit()
+sys.exit()
